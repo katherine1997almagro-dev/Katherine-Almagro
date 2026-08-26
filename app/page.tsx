@@ -1,31 +1,57 @@
-import Link from "next/link";
+import LockerSearch from '@/components/LockerSearch';
+import { ClimaData, Locker } from '@/types';
 
-export default function HomePage() {
+async function getClimaQuito(): Promise<ClimaData | null> {
+  try {
+    const res = await fetch(
+      'https://api.open-meteo.com/v1/forecast?latitude=-0.22985&longitude=-78.52495&current_weather=true',
+      { cache: 'no-store' }
+    );
+    if (!res.ok) throw new Error('Error al consultar la API externa');
+    return res.json();
+  } catch (error) {
+    console.error('Error fetching API:', error);
+    return null;
+  }
+}
+
+const LOCKERS_EJEMPLO: Locker[] = [
+  { id: '1', codigo: 'ECO-01', ubicacion: 'Centro Histórico - Plaza Grande', estado: 'disponible' },
+  { id: '2', codigo: 'ECO-02', ubicacion: 'Terminal Quitumbe', estado: 'ocupado' },
+  { id: '3', codigo: 'ECO-03', ubicacion: 'Guamaní Norte', estado: 'disponible' },
+  { id: '4', codigo: 'ECO-04', ubicacion: 'CCI - Iñaquito', estado: 'mantenimiento' },
+];
+
+export default async function HomePage() {
+  const clima = await getClimaQuito();
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gray-900 text-white">
-      <h1 className="text-4xl font-bold mb-4">Proyecto Next.js</h1>
-      <p className="text-gray-400 mb-8">Selecciona una ruta para navegar:</p>
-      
-      <div className="flex flex-wrap gap-4 justify-center">
-        <Link 
-          href="/login" 
-          className="px-4 py-2 bg-blue-600 rounded-lg font-medium hover:bg-blue-700 transition"
-        >
-          Iniciar Sesión
-        </Link>
-        <Link 
-          href="/register" 
-          className="px-4 py-2 bg-green-600 rounded-lg font-medium hover:bg-green-700 transition"
-        >
-          Crear Cuenta
-        </Link>
-        <Link 
-          href="/dashboard" 
-          className="px-4 py-2 bg-purple-600 rounded-lg font-medium hover:bg-purple-700 transition"
-        >
-          Ir al Dashboard
-        </Link>
-      </div>
+    <main className="p-8 max-w-4xl mx-auto space-y-8">
+      <section className="text-center py-8 bg-emerald-50 rounded-lg border border-emerald-100">
+        <h1 className="text-4xl font-bold text-emerald-800">EcoBox Smart</h1>
+        <p className="text-gray-600 mt-2">
+          Red inteligente y ecológica de casilleros para entrega y retiro de paquetes.
+        </p>
+      </section>
+
+      <section className="border p-4 rounded-lg bg-white shadow-sm">
+        <h2 className="text-xl font-bold mb-2 text-gray-800">
+          Clima Actual en Punto de Operación (Quito)
+        </h2>
+        {clima ? (
+          <div className="flex gap-6 text-gray-700">
+            <p>Temperatura: <strong>{clima.current_weather.temperature} °C</strong></p>
+            <p>Viento: <strong>{clima.current_weather.windspeed} km/h</strong></p>
+          </div>
+        ) : (
+          <p className="text-red-500">No se pudo cargar el clima en este momento.</p>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">Buscar Casilleros Disponibles</h2>
+        <LockerSearch lockersIniciales={LOCKERS_EJEMPLO} />
+      </section>
     </main>
   );
 }
